@@ -8,11 +8,11 @@ use std::time::Duration;
 
 use async_trait::async_trait;
 use netdevwatchdog::checks::{CheckResult, DeviceCheck, FailureCode};
-use netdevwatchdog::config::{CommandNotification, Config};
+use netdevwatchdog::config::Config;
 use netdevwatchdog::i18n::{Localizer, Msg};
 use netdevwatchdog::monitor::{DeviceMonitor, Health, Thresholds};
 use netdevwatchdog::msg;
-use netdevwatchdog::notify::{CommandNotifier, Kind, LogSink, Notification, Notifier, NtfyNotifier};
+use netdevwatchdog::notify::{Kind, LogSink, Notification, Notifier, NtfyNotifier};
 use netdevwatchdog::probe::DeviceProbe;
 use netdevwatchdog::service::Service;
 use tokio_util::sync::CancellationToken;
@@ -194,6 +194,9 @@ async fn ntfy_posts_the_alert_with_an_encoded_title() {
 #[cfg(unix)]
 #[tokio::test]
 async fn command_gets_placeholders_and_environment() {
+    use netdevwatchdog::config::CommandNotification;
+    use netdevwatchdog::notify::CommandNotifier;
+
     let dir = std::env::temp_dir().join(format!("ndw-cmd-{}", std::process::id()));
     std::fs::create_dir_all(&dir).unwrap();
     let out = dir.join("out.txt");
