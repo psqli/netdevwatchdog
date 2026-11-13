@@ -3,6 +3,8 @@
 
 pub mod checks;
 pub mod config;
+#[cfg(feature = "gui")]
+pub mod gui;
 pub mod i18n;
 pub mod monitor;
 pub mod notify;

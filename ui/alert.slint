@@ -1,0 +1,123 @@
+// Large, always-on-top alert that stays until someone presses OK.
+// The window cannot be closed from the title bar (see src/gui/alert.rs), and the
+// layout is mirrored for right-to-left languages.
+
+component ErrorIcon inherits Rectangle {
+    in property <length> size;
+    width: self.size;
+    height: self.size;
+    border-radius: self.size / 2;
+    background: #c62828;
+    Text {
+        text: "!";
+        color: white;
+        font-size: root.size * 0.68;
+        font-weight: 800;
+        horizontal-alignment: center;
+        vertical-alignment: center;
+    }
+}
+
+component OkButton inherits Rectangle {
+    in property <string> text;
+    in property <length> base;
+    callback clicked();
+    min-width: self.base * 9;
+    min-height: self.base * 2.8;
+    border-radius: self.base * 0.3;
+    background: touch.pressed ? #0a4a8a : touch.has-hover ? #0f63b8 : #0b5cad;
+    border-width: focus.has-focus ? 3px : 0px;
+    border-color: #f9a825;
+    focus := FocusScope {
+        key-pressed(event) => {
+            if (event.text == Key.Return || event.text == " ") {
+                root.clicked();
+                return accept;
+            }
+            reject
+        }
+    }
+    touch := TouchArea {
+        clicked => { root.clicked(); }
+    }
+    Text {
+        text: root.text;
+        color: white;
+        font-size: root.base;
+        font-weight: 700;
+        horizontal-alignment: center;
+        vertical-alignment: center;
+    }
+    public function focus-button() {
+        focus.focus();
+    }
+}
+
+export component AlertWindow inherits Window {
+    in property <string> heading;
+    in property <string> body;
+    in property <string> when;
+    in property <string> ok-text: "OK";
+    in property <bool> rtl;
+    in property <string> font-family;
+    // Body text size; the heading is 1.4 times larger.
+    in property <length> base: 21px;
+    callback ok-clicked();
+
+    title: root.heading;
+    always-on-top: true;
+    background: white;
+    default-font-family: root.font-family;
+    default-font-size: root.base;
+    // Wide enough for a long message at the configured size, but never huge.
+    preferred-width: min(root.base * 38, 1100px);
+    min-width: min(root.base * 24, 700px);
+
+    init => { ok.focus-button(); }
+
+    VerticalLayout {
+        padding: root.base * 1.2;
+        spacing: root.base * 0.8;
+        alignment: start;
+
+        HorizontalLayout {
+            spacing: root.base * 0.7;
+            if !root.rtl: ErrorIcon { size: root.base * 3.2; }
+            Text {
+                text: root.heading;
+                color: #b00000;
+                font-size: root.base * 1.4;
+                font-weight: 700;
+                wrap: word-wrap;
+                vertical-alignment: center;
+                horizontal-alignment: root.rtl ? right : left;
+                horizontal-stretch: 1;
+            }
+            if root.rtl: ErrorIcon { size: root.base * 3.2; }
+        }
+
+        Text {
+            text: root.body;
+            color: #1a1a1a;
+            wrap: word-wrap;
+            horizontal-alignment: root.rtl ? right : left;
+        }
+
+        Text {
+            text: root.when;
+            color: #707070;
+            font-size: root.base * 0.7;
+            horizontal-alignment: root.rtl ? right : left;
+        }
+
+        HorizontalLayout {
+            padding-top: root.base * 0.4;
+            alignment: root.rtl ? start : end;
+            ok := OkButton {
+                text: root.ok-text;
+                base: root.base;
+                clicked => { root.ok-clicked(); }
+            }
+        }
+    }
+}

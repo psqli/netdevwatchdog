@@ -1,0 +1,52 @@
+// Notification-area icon with a status menu. The menu is rebuilt by Slint
+// whenever a property it reads changes.
+
+export component Tray inherits SystemTrayIcon {
+    in property <image> status-icon;
+    in property <string> hint;
+    in property <string> summary;
+    in property <[string]> devices;
+    in property <string> check-now-text: "Check now";
+    in property <string> edit-config-text: "Edit configuration";
+    in property <string> open-log-text: "Open log folder";
+    in property <string> exit-text: "Exit";
+    callback check-now();
+    callback edit-config();
+    callback open-log();
+    callback exit();
+
+    icon: root.status-icon;
+    tooltip: root.hint;
+    title: root.hint;
+    clicked => { root.check-now(); }
+
+    Menu {
+        MenuItem {
+            title: root.summary;
+            enabled: false;
+        }
+        MenuSeparator { }
+        for line in root.devices: MenuItem {
+            title: line;
+            enabled: false;
+        }
+        MenuSeparator { }
+        MenuItem {
+            title: root.check-now-text;
+            activated => { root.check-now(); }
+        }
+        MenuItem {
+            title: root.edit-config-text;
+            activated => { root.edit-config(); }
+        }
+        MenuItem {
+            title: root.open-log-text;
+            activated => { root.open-log(); }
+        }
+        MenuSeparator { }
+        MenuItem {
+            title: root.exit-text;
+            activated => { root.exit(); }
+        }
+    }
+}

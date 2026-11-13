@@ -3,6 +3,8 @@
 
 mod cli;
 mod commands;
+#[cfg(feature = "gui")]
+mod desktop;
 mod paths;
 mod runtime;
 mod startup;
@@ -64,9 +66,17 @@ enum Failure {
 }
 
 fn run(cli: &Cli, path: &std::path::Path) -> Result<u8, runtime::LoadError> {
+    #[cfg(feature = "gui")]
+    if desktop::available() {
+        return desktop::run(cli, path);
+    }
     commands::run_console(cli, path)
 }
 
 fn test_alert(cli: &Cli, path: &std::path::Path) -> Result<u8, runtime::LoadError> {
+    #[cfg(feature = "gui")]
+    if desktop::available() {
+        return desktop::test_alert(cli, path);
+    }
     commands::test_alert_console(cli, path)
 }
