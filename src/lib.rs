@@ -4,7 +4,11 @@
 pub mod checks;
 pub mod config;
 pub mod i18n;
+pub mod monitor;
+pub mod notify;
 pub mod platform;
+pub mod probe;
+pub mod service;
 
 /// TLS uses rustls with the `ring` provider; install it once per process.
 pub fn install_crypto_provider() {
