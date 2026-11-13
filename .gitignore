@@ -1,0 +1,5 @@
+/target
+watchdog.local.json
+*.swp
+.vscode/
+.idea/

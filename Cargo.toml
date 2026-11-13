@@ -1,0 +1,52 @@
+[package]
+name = "netdevwatchdog"
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.89"
+description = "Monitors network printers and devices and raises alerts that say what kind of failure it is"
+repository = "https://github.com/psqli/netdevwatchdog"
+readme = "README.md"
+keywords = ["printer", "escpos", "monitoring", "watchdog", "ipp"]
+categories = ["command-line-utilities", "network-programming"]
+
+[dependencies]
+async-trait = "0.1.92"
+base64 = "0.23.1"
+chrono = { version = "0.4.45", default-features = false, features = ["clock", "std"] }
+clap = { version = "4.6.7", features = ["derive"] }
+futures = "0.3.34"
+notify-rust = { version = "4.19.0", optional = true }
+notify = "8.2.2"
+regex = "1.13.1"
+reqwest = { version = "0.13.5", default-features = false, features = ["rustls-no-provider", "http2"] }
+rustls = { version = "0.23.46", default-features = false, features = ["ring", "std", "tls12"] }
+serde = { version = "1.0.229", features = ["derive"] }
+serde_json = "1.0.154"
+slint = { version = "1.18.1", default-features = false, features = ["std", "backend-winit", "renderer-software", "system-tray", "compat-1-2"], optional = true }
+sys-locale = "0.3.2"
+thiserror = "2.0.21"
+tokio = { version = "1.54.1", features = ["rt-multi-thread", "net", "time", "macros", "signal", "process", "fs", "sync", "io-util"] }
+tokio-util = "0.7.20"
+
+[target."cfg(unix)".dependencies]
+surge-ping = "0.9.1"
+
+[target."cfg(windows)".dependencies]
+windows-sys = { version = "0.61.2", features = ["Win32_Foundation", "Win32_Graphics_Gdi", "Win32_Graphics_Printing", "Win32_System_Diagnostics_Debug", "Win32_NetworkManagement_IpHelper", "Win32_System_Console", "Win32_UI_WindowsAndMessaging"] }
+winreg = "0.56.0"
+
+[build-dependencies]
+slint-build = { version = "1.18.1", optional = true }
+
+[dev-dependencies]
+png = "0.18.1"
+
+[features]
+default = ["gui"]
+# Alert window, notification-area icon and desktop notifications (Slint UI).
+gui = ["dep:slint", "dep:slint-build", "dep:notify-rust"]
+
+[profile.release]
+lto = "thin"
+codegen-units = 1
+strip = true
