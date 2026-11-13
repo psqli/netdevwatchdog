@@ -1,0 +1,120 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  CARGO_TERM_COLOR: always
+  RUST_BACKTRACE: 1
+
+jobs:
+  test:
+    name: Test (${{ matrix.name }})
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: linux
+            os: ubuntu-latest
+            flags: ""
+          - name: linux-headless
+            os: ubuntu-latest
+            flags: --no-default-features
+          - name: windows
+            os: windows-latest
+            flags: ""
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy, rustfmt
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          key: ${{ matrix.name }}
+
+      # fontconfig for Slint; Arabic, Devanagari and CJK fonts for the alert rendering test.
+      - name: Install Linux packages
+        if: runner.os == 'Linux' && matrix.flags == ''
+        run: sudo apt-get update && sudo apt-get install -y libfontconfig1-dev fonts-noto-core fonts-noto-cjk
+
+      - name: Format
+        if: matrix.name == 'linux'
+        run: cargo fmt --check
+
+      - name: Clippy
+        run: cargo clippy --all-targets --locked ${{ matrix.flags }} -- -D warnings
+
+      - name: Test
+        run: cargo test --locked ${{ matrix.flags }}
+
+      - name: Upload rendered alert windows
+        if: always() && matrix.flags == ''
+        uses: actions/upload-artifact@v7
+        with:
+          name: alert-render-${{ matrix.name }}
+          path: target/tmp/*.png
+          if-no-files-found: ignore
+
+  build:
+    name: Build ${{ matrix.name }}
+    needs: test
+    if: github.event_name != 'pull_request'
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: windows-x64
+            os: windows-latest
+            flags: ""
+          - name: linux-x64
+            os: ubuntu-latest
+            flags: ""
+          - name: linux-x64-headless
+            os: ubuntu-latest
+            flags: --no-default-features
+          - name: linux-arm64-headless
+            os: ubuntu-24.04-arm
+            flags: --no-default-features
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          key: release-${{ matrix.name }}
+
+      - name: Install Linux packages
+        if: runner.os == 'Linux' && matrix.flags == ''
+        run: sudo apt-get update && sudo apt-get install -y libfontconfig1-dev
+
+      - name: Build
+        run: cargo build --release --locked ${{ matrix.flags }}
+
+      - name: Package
+        shell: bash
+        run: |
+          mkdir -p dist
+          cp target/release/netdevwatchdog${{ runner.os == 'Windows' && '.exe' || '' }} dist/
+          cp watchdog.json dist/watchdog.sample.json
+          cp README.md dist/
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: netdevwatchdog-${{ matrix.name }}
+          path: dist
